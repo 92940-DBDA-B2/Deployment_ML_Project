@@ -54,7 +54,7 @@ st.markdown(
 
 col1, col2, col3 = st.columns([1, 2, 1])
 with col2:
-    st.image(IMAGE_PATH, use_container_width=True)
+    st.image(IMAGE_PATH, width="stretch")
 
 st.divider()
 
@@ -88,74 +88,67 @@ def mark_attendance(name):
     })
 
 # -----------------------------
-# MARK ATTENDANCE
+# MARK ATTENDANCE (CLOUD SAFE)
 # -----------------------------
 if menu == "🏫 Mark Attendance":
 
-    if st.button("▶️ Start Camera"):
-        cap = cv2.VideoCapture(0)
+    st.info("📷 Capture an image using your camera")
 
-        while True:
-            ret, frame = cap.read()
-            if not ret:
-                break
+    img_file = st.camera_input("Take a picture")
 
-            gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
-            faces = face_cascade.detectMultiScale(gray, 1.1, 4)
+    if img_file is not None:
+        bytes_data = img_file.getvalue()
+        np_img = np.frombuffer(bytes_data, np.uint8)
+        frame = cv2.imdecode(np_img, cv2.IMREAD_COLOR)
 
-            for (x, y, w, h) in faces:
-                face = frame[y:y+h, x:x+w]
-                face = cv2.resize(face, (IMG_SIZE, IMG_SIZE))
-                face = face.astype("float32") / 255.0
-                face = np.expand_dims(face, axis=0)
+        gray = cv2.cvtColor(frame, cv2.COLOR_BGR2GRAY)
+        faces = face_cascade.detectMultiScale(gray, 1.1, 4)
 
-                preds = model.predict(face, verbose=0)
-                idx = np.argmax(preds)
-                confidence = preds[0][idx]
+        for (x, y, w, h) in faces:
+            face = frame[y:y+h, x:x+w]
+            face = cv2.resize(face, (IMG_SIZE, IMG_SIZE))
+            face = face.astype("float32") / 255.0
+            face = np.expand_dims(face, axis=0)
 
-                if confidence > CONF_THRESHOLD:
-                    name = labels[idx]
-                    color = GREEN
-                    mark_attendance(name)
-                    label = f"{name}  {confidence:.2f}"
-                else:
-                    name = "UNKNOWN"
-                    color = RED
-                    label = f"UNKNOWN  {confidence:.2f}"
+            preds = model.predict(face, verbose=0)
+            idx = np.argmax(preds)
+            confidence = preds[0][idx]
 
-                # Face box
-                cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
+            if confidence > CONF_THRESHOLD:
+                name = labels[idx]
+                color = GREEN
+                mark_attendance(name)
+                label = f"{name}  {confidence:.2f}"
+            else:
+                name = "UNKNOWN"
+                color = RED
+                label = f"UNKNOWN  {confidence:.2f}"
 
-                # Text background
-                (tw, th), _ = cv2.getTextSize(
-                    label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2
-                )
-                cv2.rectangle(
-                    frame,
-                    (x, y - th - 15),
-                    (x + tw + 10, y),
-                    color,
-                    -1
-                )
+            cv2.rectangle(frame, (x, y), (x+w, y+h), color, 2)
 
-                # Text
-                cv2.putText(
-                    frame,
-                    label,
-                    (x + 5, y - 5),
-                    cv2.FONT_HERSHEY_SIMPLEX,
-                    0.7,
-                    WHITE,
-                    2,
-                    cv2.LINE_AA
-                )
+            (tw, th), _ = cv2.getTextSize(
+                label, cv2.FONT_HERSHEY_SIMPLEX, 0.7, 2
+            )
+            cv2.rectangle(
+                frame,
+                (x, y - th - 15),
+                (x + tw + 10, y),
+                color,
+                -1
+            )
 
-            cv2.imshow("Face Attendance (Press Q to quit)", frame)
-            if cv2.waitKey(1) & 0xFF == ord("q"):
-                break
+            cv2.putText(
+                frame,
+                label,
+                (x + 5, y - 5),
+                cv2.FONT_HERSHEY_SIMPLEX,
+                0.7,
+                WHITE,
+                2,
+                cv2.LINE_AA
+            )
 
-        cap.release()
-        cv2.destroyAllWindows()
+        st.image(frame, channels="BGR", caption="Processed Frame", width="stretch")
 
 # -----------------------------
 # DOWNLOAD ATTENDANCE
@@ -166,7 +159,7 @@ elif menu == "📥 Download Attendance":
         st.warning("No attendance recorded.")
     else:
         df = pd.DataFrame(st.session_state.attendance)
-        st.dataframe(df, use_container_width=True)
+        st.dataframe(df, width="stretch")
 
         st.download_button(
             "⬇️ Download CSV",
