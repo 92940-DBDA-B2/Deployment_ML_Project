@@ -1,0 +1,27 @@
+# =====================
+# PYTHON CACHE
+# =====================
+__pycache__/
+*.pyc
+
+# =====================
+# VIRTUAL ENV (LOCAL ONLY)
+# =====================
+venv/
+
+# =====================
+# DOCUMENTS (NOT NEEDED FOR DEPLOYMENT)
+# =====================
+*.docx
+*.pdf
+
+# =====================
+# IMAGES (IGNORE ALL EXCEPT THE REQUIRED UI IMAGE)
+# =====================
+*.png
+*.jpg
+*.jpeg
+*.webp
+
+# Allow ONLY the required Streamlit UI image
+!What-is-Facial-Recognition.webp
